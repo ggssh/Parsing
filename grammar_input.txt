@@ -1,0 +1,7 @@
+S -> func funcs|gaewgwaf fewfa|gwefgaw
+funcs -> func funcs
+funcs -> $
+func -> type IDN ( args ) func_body
+type -> int
+type -> short
+type -> long
