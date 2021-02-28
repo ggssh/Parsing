@@ -48,12 +48,14 @@ public class Grammar {
 
     public void show(){
         for (Production production: productions){
-            System.out.print(production.left);
+            System.out.print(production.left+" : ");
             for (int i=0;i<production.right.size();i++){
                 System.out.print(production.right.get(i));
             }
             System.out.println();
         }
+        System.out.println("非终结符集 : "+VT.toString());
+        System.out.println("终结符集 : "+VN.toString());
     }
 
     //读取非终结符号集
