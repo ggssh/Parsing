@@ -11,8 +11,8 @@ import java.util.Vector;
  * @Date: 2021/2/28 0028 11:47
  */
 public class Grammar {
-    private ArrayList<String> VT;//终结符
-    private ArrayList<String> VN;//非终结符
+    ArrayList<String> VT;//终结符
+    ArrayList<String> VN;//非终结符
     String S;//开始符号
     HashMap<String,ArrayList<String>> FIRST;//First集
     HashMap<String,ArrayList<String>> FOLLOW;//Follow集
