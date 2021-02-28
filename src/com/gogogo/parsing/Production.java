@@ -10,9 +10,9 @@ import java.util.List;
 public class Production {
 
     String left;//产生式左部
-    ArrayList<String> right;//产生式右部
+    ArrayList<ArrayList<String>> right;//产生式右部
 
-    public Production(String left, ArrayList<String> right) {
+    public Production(String left, ArrayList<ArrayList<String>> right) {
         this.left = left;
         this.right = right;
     }
@@ -21,7 +21,7 @@ public class Production {
         return left;
     }
 
-    public List<String> getRight() {
+    public ArrayList<ArrayList<String>> getRight() {
         return right;
     }
 }
