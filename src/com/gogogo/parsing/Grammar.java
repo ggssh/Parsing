@@ -15,5 +15,5 @@ public class Grammar {
     String S;//开始符号
     HashMap<String, ArrayList<String>> FIRST = new HashMap<>();//First集
     HashMap<String, ArrayList<String>> FOLLOW = new HashMap<>();//Follow集
-    HashMap<String, ArrayList<String>> production;//产生式集
+    HashMap<String, ArrayList<String>> productions;//产生式集
 }
