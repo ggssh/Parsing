@@ -12,5 +12,12 @@ import org.junit.jupiter.api.Test;
 public class test {
     @Test
     public void test(){
+        Grammar grammar = new Grammar();
+        grammar.setProductions("grammar_input.txt");
+        grammar.setVN("grammar_input.txt");
+        grammar.setVT();
+        System.out.println(grammar.getProductions());
+        System.out.println(grammar.getVN());
+        System.out.println(grammar.getVT());
     }
 }
