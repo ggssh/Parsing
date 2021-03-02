@@ -173,9 +173,9 @@ public class EliminateLeftRecursive {
 //        S → Qc|c
 //        Q → Rb|b
 //        R → Sa|a
-//        char[] Vn = {'S','Q','R'},Vt = {'a','b','c'};
-//        Map<String,String> P = new HashMap<>();
-//        P.put("S","Qc|c");P.put("Q","Rb|b");P.put("R","Sa|a");
+        char[] Vn = {'S','Q','R'},Vt = {'a','b','c'};
+        Map<String,String> P = new HashMap<>();
+        P.put("S","Qc|c");P.put("Q","Rb|b");P.put("R","Sa|a");
 
 
         /*用例2
@@ -184,9 +184,9 @@ public class EliminateLeftRecursive {
         B → Ac
         B → d
         */
-        char[] Vn = {'A','B'},Vt = {'a','b','c','d'};
-        Map<String,String> P = new HashMap<>();
-        P.put("A","Bb|aB");P.put("B","Ac|d");
+//        char[] Vn = {'A','B'},Vt = {'a','b','c','d'};
+//        Map<String,String> P = new HashMap<>();
+//        P.put("A","Bb|aB");P.put("B","Ac|d");
 
 
 //        char[] Vn = {'S'},Vt = {'a','b'};

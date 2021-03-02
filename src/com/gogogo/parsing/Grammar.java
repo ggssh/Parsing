@@ -1,5 +1,7 @@
 package com.gogogo.parsing;
 
+import com.sun.istack.internal.NotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -18,8 +20,8 @@ public class Grammar {
     HashMap<String, ArrayList<String>> FIRST;//First集
     HashMap<String, ArrayList<String>> FOLLOW;//Follow集
     HashMap<String, ArrayList<String>> productions;//产生式集
-    public static final char SINGLE_ANGLE_QUOTE = '\'';
-    public static final char EPSILON = '$';
+    public static final char SINGLE_ANGLE_QUOTE = '\'';//用来替换非终结符
+    public static final char EPSILON = '$';//用来代替ε
 
     public Grammar() {
         VT = new ArrayList<>();
@@ -151,12 +153,13 @@ public class Grammar {
                         if (Ai.get(k).indexOf(VN.get(j)) == 0) {
                             StringBuilder ts = new StringBuilder();
                             for (int m = 1; m < Ai.get(k).size(); m++) {
-                                ts.append(Ai.get(k).get(m));
+                                //每次append之后都要加入一个空格
+                                ts.append(Ai.get(k).get(m)).append(" ");
                             }
                             for (ArrayList<String> aj : Aj) {
                                 StringBuilder tempAj = new StringBuilder();
                                 for (String s : aj) {
-                                    tempAj.append(s);
+                                    tempAj.append(s).append(" ");
                                 }
                                 builder.append(tempAj).append(ts).append("|");
                             }
@@ -167,9 +170,9 @@ public class Grammar {
                     for (; k < Ai.size(); k++) {
                         StringBuilder tempAi = new StringBuilder();
                         for (String s : Ai.get(k)) {
-                            tempAi.append(s);
+                            tempAi.append(s).append(" ");
                         }
-                        builder.append(Ai.get(k)).append("|");
+                        builder.append(tempAi).append("|");
                     }
                     ArrayList<ArrayList<String>> resDoubleArrayList = new ArrayList<>();
                     List<String> resList = Arrays.asList(builder.toString().split("\\|"));
@@ -189,7 +192,8 @@ public class Grammar {
         }
     }
 
-    private void directLeftRecursive(String left, ArrayList<ArrayList<String>> right) {
+    //消除直接左递归
+    private void directLeftRecursive(String left,@NotNull ArrayList<ArrayList<String>> right) {
         //用于替换的非终结符(如A')
         String repl = left + SINGLE_ANGLE_QUOTE;
         //用于拼接A的右部
@@ -198,15 +202,14 @@ public class Grammar {
         StringBuilder r2 = new StringBuilder();
         for (ArrayList<String> stringArrayList : right) {
             String s = "";
+            for (String str : stringArrayList) {
+                s += str;
+                s+=" ";
+            }
             if (stringArrayList.indexOf(left) == 0) {
-                for (String str : stringArrayList) {
-                    s += str;
-                }
-                r2.append(s.substring(1)).append(repl).append("|");
+
+                r2.append(s.substring(s.indexOf(left)+left.length())).append(repl).append("|");
             } else {
-                for (String str : stringArrayList) {
-                    s += str;
-                }
                 r1.append("|").append(s).append(repl);
             }
         }
@@ -215,6 +218,7 @@ public class Grammar {
         productions.put(repl, str2Array(r2.append(EPSILON).toString()));
     }
 
+    //将产生式根据 | 进行分割
     public ArrayList<String> str2Array(String str) {
         List<String> strings = Arrays.asList(str.split("\\|"));
         ArrayList<String> stringArrayList = new ArrayList<>(strings);
