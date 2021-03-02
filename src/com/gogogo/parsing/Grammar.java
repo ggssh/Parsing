@@ -190,6 +190,8 @@ public class Grammar {
                 directLeftRecursive(VN.get(i), Ai);
             }
         }
+        //重新设置非终结符集
+        VN = new ArrayList<String>(productions.keySet());
     }
 
     //消除直接左递归
@@ -219,7 +221,7 @@ public class Grammar {
     }
 
     //将产生式根据 | 进行分割
-    public ArrayList<String> str2Array(String str) {
+    private ArrayList<String> str2Array(String str) {
         List<String> strings = Arrays.asList(str.split("\\|"));
         ArrayList<String> stringArrayList = new ArrayList<>(strings);
         return stringArrayList;
@@ -306,5 +308,29 @@ public class Grammar {
             return prefix.trim();
         }
         return prefix;
+    }
+
+    //输出经过处理之后的文法
+    public void grammarOutput(){
+        for (String value : VN) {
+            int count = 0;
+            StringBuilder str = new StringBuilder();
+            ArrayList<String> get = productions.get(value);
+            for (int i = 0, getSize = get.size(); i < getSize; i++) {
+                String s = get.get(i);
+                List<String> list = Arrays.asList(s.trim().split("\\s+"));
+                ArrayList<String> arrayList = new ArrayList<>(list);
+                for (int j = 0; j < arrayList.size(); j++) {
+                    str.append(arrayList.get(j));
+                    if (j < arrayList.size() - 1) {
+                        str.append(" ");
+                    }
+                }
+                if (i<get.size()-1){
+                    str.append("|");
+                }
+            }
+            System.out.println(value+"->"+str);
+        }
     }
 }
