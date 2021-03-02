@@ -20,5 +20,6 @@ public class test {
         System.out.println(grammar.getProductions());
         System.out.println(grammar.getVN());
         System.out.println(grammar.getVT());
+        grammar.grammarOutput();
     }
 }
