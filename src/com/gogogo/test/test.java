@@ -17,7 +17,7 @@ public class test {
         grammar.setVN("grammar_input.txt");
         grammar.setVT();
         grammar.allLeftRecursive();
-        System.out.println(grammar.getProductions());
+        //System.out.println(grammar.getProductions());
         System.out.println(grammar.getVN());
         System.out.println(grammar.getVT());
         grammar.grammarOutput();

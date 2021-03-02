@@ -17,8 +17,8 @@ public class Grammar {
     ArrayList<String> VT;//终结符
     ArrayList<String> VN;//非终结符
     String S;//开始符号
-    HashMap<String, ArrayList<String>> FIRST;//First集
-    HashMap<String, ArrayList<String>> FOLLOW;//Follow集
+    HashMap<String, HashSet<String>> FIRST;//First集
+    HashMap<String, HashSet<String>> FOLLOW;//Follow集
     HashMap<String, ArrayList<String>> productions;//产生式集
     public static final char SINGLE_ANGLE_QUOTE = '\'';//用来替换非终结符
     public static final char EPSILON = '$';//用来代替ε
