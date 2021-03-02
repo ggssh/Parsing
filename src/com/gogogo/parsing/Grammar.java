@@ -41,7 +41,11 @@ public class Grammar {
                 String tempRight = line.split("->")[1].trim();
                 List<String> temp = Arrays.asList(tempRight.split("\\|"));
                 ArrayList<String> right = new ArrayList<>(temp);
-                productions.put(left, right);
+                if(productions.get(left)==null){
+                    productions.put(left, right);
+                }else{
+                    productions.get(left).addAll(right);
+                }
             }
             randomFile.close();
         } catch (IOException e) {
