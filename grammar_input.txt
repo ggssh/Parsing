@@ -1,1 +1,2 @@
-A->A B C|a C D|a B C
+A->B a
+B->c
