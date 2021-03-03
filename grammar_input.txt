@@ -1,3 +1,1 @@
-S -> Q c|c
-Q -> R b|b
-R -> S a|a
+A->A B C|a C D|a B C
