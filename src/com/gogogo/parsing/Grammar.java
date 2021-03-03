@@ -62,24 +62,25 @@ public class Grammar {
     //读取非终结符号集
     public void setVN(String filepath) {
         try {
-            //读取文件，然后一行一行地进行读取
             File file = new File(filepath);
             RandomAccessFile randomfile = new RandomAccessFile(file, "r");
 
             String line;
-            String left;
-            while ((line = randomfile.readLine()) != null) {
-                left = line.split("->")[0].trim();
-                //如果非终结符号集不包含，就加入
+            while((line = randomfile.readLine()) != null) {
+                String left = line.split("->")[0].trim();
+                if(S.isEmpty()){
+                    S = new String(left);
+                }
                 if (!this.VN.contains(left)) {
                     this.VN.add(left);
                 }
             }
-            //关闭文件读写
+
             randomfile.close();
-        } catch (Exception var5) {
-            var5.printStackTrace();
+        } catch (Exception var6) {
+            var6.printStackTrace();
         }
+
     }
 
     public ArrayList<String> getVN() {
@@ -88,23 +89,25 @@ public class Grammar {
 
     //读取终结符
     public void setVT() {
-        ArrayList<String> rights = new ArrayList<>();
-        for (int i = 0; i < VN.size(); i++) {
-            String left = VN.get(i);
-            //rights代表的是非终结符号右边的所有产生式
-            rights = productions.get(left);
-            //取出每一条产生式
-            for (String right : rights) {
-                //判断产生式的每一个符号,这边利用空格分割
+        new ArrayList();
+
+        for(int i = 0; i < this.VN.size(); ++i) {
+            String left = (String)this.VN.get(i);
+            ArrayList<String> rights = (ArrayList)this.productions.get(left);
+            Iterator var4 = rights.iterator();
+
+            while(var4.hasNext()) {
+                String right = (String)var4.next();
                 String[] production = right.split(" ");
-                for (int j = 0; j < production.length; j++) {
-                    //如果非终结符号不可以找到并且也不是”$“，就是终结符号
-                    if (!VN.contains(production[j]) && !production[j].equals("$") && !VT.contains(production[j])) {
-                        VT.add(production[j]);
+
+                for(int j = 0; j < production.length; ++j) {
+                    if (!this.VN.contains(production[j])  && !this.VT.contains(production[j])) {
+                        this.VT.add(production[j]);
                     }
                 }
             }
         }
+
     }
 
     public ArrayList<String> getVT() {
@@ -332,5 +335,85 @@ public class Grammar {
             }
             System.out.println(value+"->"+str);
         }
+    }
+
+    public void getFirst(){
+//      first集合
+        Iterator<String> it = VN.iterator();
+//        遍历每一个非终结符号
+        while(it.hasNext()){
+//            存放单个非终结符号的FIRST
+            HashSet<String> firstCell = new HashSet<>();
+//            读取非终结符号的所有产生式
+            String key = it.next();
+            ArrayList<String> list = productions.get(key);
+//            遍历非终结符号的所有产生式
+            for(int i =0;i<list.size();i++){
+//                将每个产生式读取进去字符串数组,方便后续的操作
+                String[] listCell = list.get(i).split(" ");
+//                如果第一个字符是终结符号,就直接加入
+                if(VT.contains(listCell[0])){
+                    firstCell.add(listCell[0]);
+                }
+//                如果不是终结符号,就进行一系列的逻辑处理
+                else{
+                    //标记是否有定义为空,如果有就检查下一个字符
+                    boolean[] isVn = new boolean[listCell.length];
+                    //第一个符号肯定是非终结符号,所以先检查第一个
+                    int p =0;
+                    isVn[p]=true;
+//                    从第一个开始检查
+                    while(isVn[p]){
+//                        如果p指的位置出现了终结符号,那么就直接加入FIRST集合,并且直接跳出循环
+                        if(VT.contains(listCell[p])){
+                            firstCell.add(listCell[p]);
+                            break;
+                        }
+//                        走到这一步代表这个符号是非终结符号了,有点好奇为什么加入栈
+                        String vnGo = listCell[p];
+                        Stack<String> stack = new Stack<>();
+                        stack.push(vnGo);
+                        while(!stack.empty()){
+                            //拿到这些非终结符号的产生式(就是栈顶元素的)
+                            ArrayList<String> listGo = productions.get(stack.pop());
+//                            遍历这个非终结符号的每一个产生式
+                            for(int k =0;k<listGo.size();k++){
+//                                先拿到第一个产生式
+                                String[] listGoCell = listGo.get(k).split(" ");
+//                                如果该非终结符号的产生式的第一个符号是终结符号的话
+                                if(VT.contains(listGoCell[0])){
+//                                    如果该终结符号是$的话
+                                    if(listGoCell[0].equals("$")){
+//                                    开始符号不能推出空
+                                        if(!key.equals(S)){
+                                            firstCell.add(listGoCell[0]);
+                                        }
+                                        if(p+1<isVn.length){
+                                            isVn[p+1]=true;
+                                        }
+                                    }
+//                                    如果终结符号不是$的话
+                                    else{
+                                        firstCell.add(listGoCell[0]);
+                                    }
+                                }
+//                                如果该非终结符号的产生式的第一个符号不是终结符号的话,入栈继续判断
+                                else{
+                                    stack.push(listGoCell[0]);
+                                }
+                            }
+                        }
+                        //进行下一次循环
+                        p++;
+                        if(p>isVn.length-1){
+                            break;
+                        }
+                    }
+                }
+            }
+//            将firstCell放进去FIRST集合
+            FIRST.put(key,firstCell);
+        }
+        System.out.println(FIRST+"FIRST");
     }
 }
