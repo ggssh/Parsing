@@ -232,85 +232,83 @@ public class Grammar {
 
     //提取左公因子
     public void leftFactoring() {
-        for (int i = 0; i < VN.size(); i++) {
-            String left = new String(VN.get(i));
-            String a = maxPrefix(left);
+        for(int i = 0; i < this.VN.size(); ++i) {
+            String left = new String((String)this.VN.get(i));
+            ArrayList<String> production = (ArrayList)this.productions.get(left);
+            new String();
 
-            if (!a.isEmpty()) {
-                String left_Epr = new String(left);
-                while (VN.contains(left_Epr)) {
-                    left_Epr += "'";
+            String a;
+            while(!(a = this.longestCommonPrefix(production)).isEmpty()) {
+                String left_Epr;
+                for(left_Epr = new String(left); this.VN.contains(left_Epr); left_Epr = left_Epr + "'") {
                 }
-                String newNT = left_Epr;
-                VN.add(VN.indexOf(left), newNT);
-                ArrayList<String> newRight1 = new ArrayList<String>();
-                ArrayList<String> newRight2 = new ArrayList<String>();
-                for (int j = 0; j < productions.get(left).size(); j++) {
-                    String right = productions.get(left).get(j);
-                    String newRight = new String();
 
-                    if (!right.contains(a)) {
-                        newRight1.add(right);
-                    } else {
-                        if (right.indexOf(a) + a.length() != right.length()) {
-                            newRight = right.substring(right.indexOf(a) + a.length() + 1);
+                String newNT = new String(left_Epr);
+                this.VN.add(this.VN.indexOf(left) + 1, newNT);
+                ArrayList<String> newRight = new ArrayList();
+                ArrayList<String> newRight_Epr = new ArrayList();
+                Iterator var9 = production.iterator();
+
+                while(true) {
+                    while(var9.hasNext()) {
+                        String right = (String)var9.next();
+                        new String();
+                        if (!right.contains(a)) {
+                            newRight.add(right);
+                        } else {
+                            String newright;
+                            if (right.indexOf(a) + a.length() != right.length() && right.indexOf(a) == 0) {
+                                newright = right.substring(right.indexOf(a) + a.length() + 1);
+                                newRight_Epr.add(newright);
+                            } else if (right.indexOf(a) + a.length() != right.length() && right.indexOf(a) != 0) {
+                                newRight.add(right);
+                            } else {
+                                newright = "$";
+                                newRight_Epr.add(newright);
+                            }
                         }
-//                        a后面是空的
-                        else {
-                            newRight = "$";
-                        }
-                        newRight2.add(newRight);
                     }
+
+                    newRight.add(new String(a + " " + newNT));
+                    this.productions.put(left, newRight);
+                    this.productions.put(newNT, newRight_Epr);
+                    production = new ArrayList((Collection)this.productions.get(left));
+                    break;
                 }
-                //A->aA'
-                newRight1.add(new String(a + " " + newNT));
-                productions.put(left, newRight1);
-                productions.put(newNT, newRight2);
             }
         }
-        System.out.println(productions);
+
+        System.out.println(this.productions);
     }
 
     //最大的前缀
-    private String maxPrefix(String left) {
-//        用来储存返回的结果
-        String prefix = new String();
-//        拿到P的右边的全部产生式
-        Vector<String> P = new Vector<String>(productions.get(left));
-//        拿到第一个产生式
-        String firstP = new String(P.get(0));
-//        把firstP根据空格分开
+    public String longestCommonPrefix(ArrayList<String> strs) {
+        if (strs != null && strs.size() != 0) {
+            int count = strs.size();
+            String ans = new String();
 
-        firstP += " ";
-
-        while (firstP.indexOf(' ') != firstP.length() - 1) {
-            String temp = firstP.substring(0, firstP.indexOf(" "));
-            //System.out.println("第一个产生中的第一个token: "+temp);
-
-            boolean flag = false;
-            //遍历left的其他产生式
-            for (int i = 1; i < P.size(); i++) {
-                String right = new String(P.get(i));
-                right += " ";
-
-                String cmp = right.substring(0, right.indexOf(" "));
-
-                if (!cmp.equals(temp)) {
-                    break;
-                } else {
-                    if (flag == false) {
-                        prefix += (temp + " ");
+            for(int i = 0; i < count; ++i) {
+                for(int j = i + 1; j < count; ++j) {
+                    String temp = this.longestCommonPrefix((String)strs.get(i), (String)strs.get(j));
+                    if (temp.length() != 0 && ans.length() < temp.length()) {
+                        ans = new String(temp);
                     }
-                    P.set(i, right.substring(right.indexOf(" ") + 1));
-                    flag = true;
                 }
             }
-            firstP = firstP.substring(firstP.indexOf(" ") + 1);
+
+            return ans.trim();
+        } else {
+            return "";
         }
-        if (prefix.length() > 0) {
-            return prefix.trim();
+    }
+    public String longestCommonPrefix(String str1, String str2) {
+        int length = Math.min(str1.length(), str2.length());
+
+        int index;
+        for(index = 0; index < length && str1.charAt(index) == str2.charAt(index); ++index) {
         }
-        return prefix;
+
+        return str1.substring(0, index).trim();
     }
 
     //输出经过处理之后的文法
