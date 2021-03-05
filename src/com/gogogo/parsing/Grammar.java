@@ -434,164 +434,86 @@ public class Grammar {
 
     //获得Follow集
     public void getFollow() {
-        //迭代器,方便对容器中的元素进行遍历
-        Iterator<String> it = VN.iterator();
         HashMap<String, HashSet<String>> keyFollow = new HashMap<>();
-        // 用于存放/A->...B 或者 A->...Bε的组合
-        ArrayList<HashMap<String, String>> VnList = new ArrayList<>();
-        HashSet<String> VnListLeft = new HashSet<>();
-        HashSet<String> VnListRight = new HashSet<>();
+        //先对keyFollow进行初始化,之后再进行元素的增加
+        for (String vn : VN) {
+            keyFollow.put(vn, new HashSet<>());
+        }
         //开始符号加入#
-        //在创建hashset的同时进行add操作
         keyFollow.put(START, new HashSet<String>() {
             private static final long serialVersionUID = 1L;
-
             {
                 add(new String("#"));
             }
         });
+        //使用迭代器更方便的进行遍历
+        Iterator<String> iteratorVn = VN.iterator();
+        //开始对每个非终结符进行遍历
+        while (iteratorVn.hasNext()) {
+            String key = iteratorVn.next();
+            ArrayList<ArrayList<String>> list = new ArrayList<>(right2Array(productions.get(key)));
+            //ArrayList<String> listCell;
 
-        while (it.hasNext()) {
-            String key = it.next();
-            //将产生式的右部变换为二维数组类型
-            ArrayList<ArrayList<String>> list = right2Array(productions.get(key));
-            ArrayList<String> listCell;
-
-            //先把每个VN作为keyFollow的key,之后再查找添加其Follow元素
-            if (!keyFollow.containsKey(key)) {
-                keyFollow.put(key, new HashSet<>());
-            }
-            keyFollow.toString();
-
-            for (ArrayList<String> arrayList : list) {
-                listCell = arrayList;
-
-                //1.直接找非终结符号后面跟着终结符号
-                for (int i = 1; i < listCell.size(); i++) {
-                    HashSet<String> set = new HashSet<>();
-                    if (VT.contains(listCell.get(i))) {
-                        set.add(listCell.get(i));
-                        //如果keyFollow中键包含当前终结符前面的那个非终结符时,将该键所对应的set重新加入至当前set集合,进行更新
-                        if (keyFollow.containsKey(listCell.get(i - 1))) {
-                            set.addAll(keyFollow.get(listCell.get(i - 1)));
+            for (ArrayList<String> strList : list){
+                for(int i =0;i<strList.size();i++){
+                    if (i==strList.size()-1){
+                        HashSet<String> set = new HashSet<>();
+                        //如果最后一个是非终结符,则其follow集中加入follow(key)
+                        if (VN.contains(strList.get(i))){
+                            set.addAll(keyFollow.get(key));
+                            set.remove(EPSILON);
+                            keyFollow.put(strList.get(i),set);
                         }
-                        keyFollow.put(listCell.get(i - 1), set);
-                    }
-                }
-                //2.找...VnVn...组合
-                for (int i = 0; i < listCell.size() - 1; i++) {
-                    HashSet<String> set = new HashSet<>();
-                    //如果当前是一个非终结符而且之后一个仍然是非终结符
-                    if (VN.contains(listCell.get(i)) && VN.contains(listCell.get(i + 1))) {
-                        set.addAll(FIRST.get(listCell.get(i + 1)));
-                        set.remove(EPSILON);
-
-                        if (keyFollow.containsKey(listCell.get(i))) {
-                            set.addAll(keyFollow.get(listCell.get(i)));
-                        }
-                        keyFollow.put(listCell.get(i), set);
-                    }
-                }
-                //3.A->...B或者A->...B$(可以有n个$)的组合存起来
-                for (int i = 0; i < listCell.size(); i++) {
-                    HashMap<String, String> newVn;
-                    // 是VN且A不等于B(产生式左部的非终结符)
-                    if (VN.contains(listCell.get(i)) && !listCell.get(i).equals(key)) {
-                        //标记VN后是否为空
-                        boolean isAllNull = false;
-                        //即A->...B$(可以有多个$)
-                        if (i + 1 < listCell.size()) {
-                            for (int j = i + 1; j < listCell.size(); j++) {
-                                //如果其后面的都是VN且其FIRST中包含EPSILON
-                                if ((FIRST.containsKey(listCell.get(j)) ? FIRST.get(listCell.get(j)).contains(EPSILON)
-                                        : false)) {
-                                    isAllNull = true;
-                                } else {
-                                    isAllNull = false;
-                                    break;
+                    }else{
+                        //如果当前为非终结符,则需要判断其后面是终结符还是非终结符
+                        //如果后面是终结符,则其follow集中加入该终结符
+                        //如果后面是非终结符,需要分为两种情况
+                        //1.推不出来空,则直接将这个非终结符的first集加入
+                        //2.若能推出来空，则将这个非终结符的first集加入，接着往后直到遇到推不出空或者终结符
+                        if (VN.contains(strList.get(i))){//只有第一个为非终结符的才能够
+                            //如果后面挨着的是一个终结符,直接将其加入follow集中
+                            if (VT.contains(strList.get(i+1))){
+                                HashSet<String> set = new HashSet<>();
+                                set.add(strList.get(i+1));
+                                //判断keyFollow中是否已经存在该key,如果有的话需要进行set的更新,避免产生覆盖
+                                if (keyFollow.containsKey(strList.get(i))){
+                                    set.addAll(keyFollow.get(strList.get(i)));
+                                    //移除EPSION符号
+                                    set.remove(EPSILON);
                                 }
-                            }
-                        }
-                        //如果是最后一个为VN,即A->...B
-                        if (i == listCell.size() - 1) {
-                            isAllNull = true;
-                        }
-                        if (isAllNull) {
-                            VnListLeft.add(key);
-                            VnListRight.add(listCell.get(i));
-
-                            //往VnList中添加,分存在和不存在两种情况
-                            boolean isHaveAdd = false;
-                            for (int x = 0; x < VnList.size(); x++) {
-                                HashMap<String, String> VnListCell = VnList.get(x);
-                                if (!VnListCell.containsKey(key)) {
-                                    VnListCell.put(key, listCell.get(i));
-                                    VnList.set(x, VnListCell);
-                                    isHaveAdd = true;
-                                    break;
-                                } else {
-                                    //去重
-                                    if (VnListCell.get(key).equals(listCell.get(i))) {
-                                        isHaveAdd = true;
+                                keyFollow.put(strList.get(i),set);
+                            }else{//后面是非终结符,进行分类讨论
+                                HashSet<String> set = new HashSet<>();
+                                for (int j=i+1;j<strList.size();j++){
+                                    //如果当前为一个终结符,则将其加入follow(strList.get(i))中
+                                    if (VT.contains(strList.get(j))){
+                                        set.add(strList.get(j));
                                         break;
+                                    }else{
+                                        set.addAll(FIRST.get(strList.get(j)));
+                                        //如果该非终结符没有办法推出空,则说明follow集添加完毕
+                                        if(!FIRST.get(strList.get(j)).contains(EPSILON)){
+                                            break;
+                                        }
+                                        //如果到了最后一个还是会推出来空,则加入keyFollow(key),经过上面的if语句后没有推出说明其还是会推出空
+                                        if (j==strList.size()-1){
+                                            set.addAll(keyFollow.get(key));
+                                        }
                                     }
-                                    continue;
                                 }
-                            }
-                            //如果没有添加,表示是新的组合
-                            if (!isHaveAdd) {
-                                newVn = new HashMap<>();
-                                newVn.put(key, listCell.get(i));
-                                VnList.add(newVn);
+                                //判断keyFollow中是否已经存在该key,如果有的话需要进行set的更新,避免产生覆盖
+                                if (keyFollow.containsKey(strList.get(i))){
+                                    set.addAll(keyFollow.get(strList.get(i)));
+                                    set.remove(EPSILON);
+                                }
+                                keyFollow.put(strList.get(i),set);
                             }
                         }
                     }
                 }
             }
         }
-
-        keyFollow.toString();
-
-        //4.VnListLeft减去VnListRight,剩下的就是入口产生式
-        VnListLeft.removeAll(VnListRight);
-        //用栈或者队列都可以
-        Queue<String> keyQueue = new LinkedList<>();
-        Iterator<String> itVnVn = VnListLeft.iterator();
-        while (itVnVn.hasNext()) {
-            keyQueue.add(itVnVn.next());
-        }
-        while (!keyQueue.isEmpty()) {
-            String keyLeft = keyQueue.poll();
-            for (int t = 0; t < VnList.size(); t++) {
-                HashMap<String, String> VnListCell = VnList.get(t);
-                if (VnListCell.containsKey(keyLeft)) {
-                    HashSet<String> set = new HashSet<>();
-                    //原来的FOLLOW加上左边的FOLLOW
-                    if (keyFollow.containsKey(keyLeft)) {
-                        set.addAll(keyFollow.get(keyLeft));
-                    }
-                    if (keyFollow.containsKey(VnListCell.get(keyLeft))) {
-                        set.addAll(keyFollow.get(VnListCell.get(keyLeft)));
-                    }
-                    keyFollow.put(VnListCell.get(keyLeft), set);
-                    keyQueue.add(VnListCell.get(keyLeft));
-
-                    //移除已处理的组合
-                    VnListCell.remove(keyLeft);
-                    VnList.set(t, VnListCell);
-                }
-            }
-        }
-        //莫名会出现$,目前没有发现问题出在哪
-        for (int cnt =0;cnt<VN.size();cnt++){
-            keyFollow.get(VN.get(cnt)).remove(EPSILON);
-        }
-        HashMap<String,HashSet<String>> res = new HashMap<>();
-        for (String s:VN){
-            res.put(s,keyFollow.get(s));
-        }
-        //此时keyFollow为完整的FOLLOW集
-        FOLLOW = res;
+        FOLLOW=keyFollow;
     }
 
     public HashMap<String, HashSet<String>> getFOLLOW() {
