@@ -18,13 +18,14 @@ public class test {
         grammar.setProductions("grammar_input.txt");
         grammar.setVN("grammar_input.txt");
         grammar.setVT();
+        System.out.println("开始符号为 : "+ grammar.getVN().get(0));
         //消除左递归
         grammar.allLeftRecursive();
         //提取左公共因子
         grammar.leftFactoring();
         //获得First集
         grammar.getFirst();
-        //获得Follw集
+        //获得Follow集
         grammar.getFollow();
         //System.out.println(grammar.getProductions());
         System.out.println("VN "+grammar.getVN());

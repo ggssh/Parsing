@@ -21,7 +21,7 @@ import java.util.Stack;
  *
  */
 public class temp {
-    public static final String PATH = "./grammar2";// 文法
+    public static final String PATH = "grammar_input.txt";// 文法
     private static String START; // 开始符号
     private static HashSet<String> VN, VT; // 非终结符号集、终结符号集
     private static HashMap<String, ArrayList<ArrayList<String>>> MAP;// key:产生式左边 value:产生式右边(含多条)
@@ -252,7 +252,7 @@ public class temp {
 
         for (int i = 0; i < list.size(); i++) {
             String oneline = list.get(i);
-            String[] vnvt = oneline.split("→");// 用定义符号分割
+            String[] vnvt = oneline.split("->");// 用定义符号分割
             String left = vnvt[0].trim(); // 文法的左边
             VN.add(left);
 

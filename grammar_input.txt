@@ -1,4 +1,3 @@
-X->A B C d
+S->A B c
 A->a|$
 B->b|$
-C->c|$
