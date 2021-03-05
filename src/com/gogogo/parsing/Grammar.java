@@ -20,8 +20,11 @@ public class Grammar {
     HashMap<String, HashSet<String>> FIRST;//First集
     HashMap<String, HashSet<String>> FOLLOW;//Follow集
     HashMap<String, ArrayList<String>> productions;//产生式集
+    private static HashMap<String, String> oneLeftFirst;// "|" 分开的单条产生式对应的FIRST集合,用于构建预测分析表
     public static final char SINGLE_ANGLE_QUOTE = '\'';//用来替换非终结符
     public static final char EPSILON = '$';//用来代替ε
+    private static String[][] FORM; // 存放预测分析表的数组，用于输出
+    private static HashMap<String, String> preMap;// 存放预测分析表的map，用于快速查找
 
     public Grammar() {
         VT = new ArrayList<>();
@@ -30,6 +33,8 @@ public class Grammar {
         FIRST = new HashMap<>();
         FOLLOW = new HashMap<>();
         productions = new HashMap<>();
+        oneLeftFirst = new HashMap<>();
+        preMap = new HashMap<>();
     }
 
     //读取产生式
@@ -232,85 +237,83 @@ public class Grammar {
 
     //提取左公因子
     public void leftFactoring() {
-        for (int i = 0; i < VN.size(); i++) {
-            String left = new String(VN.get(i));
-            String a = maxPrefix(left);
+        for(int i = 0; i < this.VN.size(); ++i) {
+            String left = new String((String)this.VN.get(i));
+            ArrayList<String> production = (ArrayList)this.productions.get(left);
+            new String();
 
-            if (!a.isEmpty()) {
-                String left_Epr = new String(left);
-                while (VN.contains(left_Epr)) {
-                    left_Epr += "'";
+            String a;
+            while(!(a = this.longestCommonPrefix(production)).isEmpty()) {
+                String left_Epr;
+                for(left_Epr = new String(left); this.VN.contains(left_Epr); left_Epr = left_Epr + "'") {
                 }
-                String newNT = left_Epr;
-                VN.add(VN.indexOf(left), newNT);
-                ArrayList<String> newRight1 = new ArrayList<String>();
-                ArrayList<String> newRight2 = new ArrayList<String>();
-                for (int j = 0; j < productions.get(left).size(); j++) {
-                    String right = productions.get(left).get(j);
-                    String newRight = new String();
 
-                    if (!right.contains(a)) {
-                        newRight1.add(right);
-                    } else {
-                        if (right.indexOf(a) + a.length() != right.length()) {
-                            newRight = right.substring(right.indexOf(a) + a.length() + 1);
+                String newNT = new String(left_Epr);
+                this.VN.add(this.VN.indexOf(left) + 1, newNT);
+                ArrayList<String> newRight = new ArrayList();
+                ArrayList<String> newRight_Epr = new ArrayList();
+                Iterator var9 = production.iterator();
+
+                while(true) {
+                    while(var9.hasNext()) {
+                        String right = (String)var9.next();
+                        new String();
+                        if (!right.contains(a)) {
+                            newRight.add(right);
+                        } else {
+                            String newright;
+                            if (right.indexOf(a) + a.length() != right.length() && right.indexOf(a) == 0) {
+                                newright = right.substring(right.indexOf(a) + a.length() + 1);
+                                newRight_Epr.add(newright);
+                            } else if (right.indexOf(a) + a.length() != right.length() && right.indexOf(a) != 0) {
+                                newRight.add(right);
+                            } else {
+                                newright = "$";
+                                newRight_Epr.add(newright);
+                            }
                         }
-//                        a后面是空的
-                        else {
-                            newRight = "$";
-                        }
-                        newRight2.add(newRight);
                     }
+
+                    newRight.add(new String(a + " " + newNT));
+                    this.productions.put(left, newRight);
+                    this.productions.put(newNT, newRight_Epr);
+                    production = new ArrayList((Collection)this.productions.get(left));
+                    break;
                 }
-                //A->aA'
-                newRight1.add(new String(a + " " + newNT));
-                productions.put(left, newRight1);
-                productions.put(newNT, newRight2);
             }
         }
-        System.out.println(productions);
+
+        System.out.println(this.productions);
     }
 
-    //最大的前缀
-    private String maxPrefix(String left) {
-//        用来储存返回的结果
-        String prefix = new String();
-//        拿到P的右边的全部产生式
-        Vector<String> P = new Vector<String>(productions.get(left));
-//        拿到第一个产生式
-        String firstP = new String(P.get(0));
-//        把firstP根据空格分开
+    public String longestCommonPrefix(ArrayList<String> strs) {
+        if (strs != null && strs.size() != 0) {
+            int count = strs.size();
+            String ans = new String();
 
-        firstP += " ";
-
-        while (firstP.indexOf(' ') != firstP.length() - 1) {
-            String temp = firstP.substring(0, firstP.indexOf(" "));
-            //System.out.println("第一个产生中的第一个token: "+temp);
-
-            boolean flag = false;
-            //遍历left的其他产生式
-            for (int i = 1; i < P.size(); i++) {
-                String right = new String(P.get(i));
-                right += " ";
-
-                String cmp = right.substring(0, right.indexOf(" "));
-
-                if (!cmp.equals(temp)) {
-                    break;
-                } else {
-                    if (flag == false) {
-                        prefix += (temp + " ");
+            for(int i = 0; i < count; ++i) {
+                for(int j = i + 1; j < count; ++j) {
+                    String temp = this.longestCommonPrefix((String)strs.get(i), (String)strs.get(j));
+                    if (temp.length() != 0 && ans.length() < temp.length()) {
+                        ans = new String(temp);
                     }
-                    P.set(i, right.substring(right.indexOf(" ") + 1));
-                    flag = true;
                 }
             }
-            firstP = firstP.substring(firstP.indexOf(" ") + 1);
+
+            return ans.trim();
+        } else {
+            return "";
         }
-        if (prefix.length() > 0) {
-            return prefix.trim();
+    }
+
+    public String longestCommonPrefix(String str1, String str2) {
+        int length = Math.min(str1.length(), str2.length());
+
+        int index;
+        for(index = 0; index < length && str1.charAt(index) == str2.charAt(index); ++index) {
         }
-        return prefix;
+
+        return str1.substring(0, index).trim();
     }
 
     //输出经过处理之后的文法
@@ -344,6 +347,7 @@ public class Grammar {
         while(it.hasNext()){
 //            存放单个非终结符号的FIRST
             HashSet<String> firstCell = new HashSet<>();
+//
 //            读取非终结符号的所有产生式
             String key = it.next();
             ArrayList<String> list = productions.get(key);
@@ -351,9 +355,11 @@ public class Grammar {
             for(int i =0;i<list.size();i++){
 //                将每个产生式读取进去字符串数组,方便后续的操作
                 String[] listCell = list.get(i).split(" ");
+                String oneLeft =list.get(i);
 //                如果第一个字符是终结符号,就直接加入
                 if(VT.contains(listCell[0])){
                     firstCell.add(listCell[0]);
+                    oneLeftFirst.put(key+"&"+listCell[0],key+"->"+oneLeft);
                 }
 //                如果不是终结符号,就进行一系列的逻辑处理
                 else{
@@ -367,6 +373,7 @@ public class Grammar {
 //                        如果p指的位置出现了终结符号,那么就直接加入FIRST集合,并且直接跳出循环
                         if(VT.contains(listCell[p])){
                             firstCell.add(listCell[p]);
+                            oneLeftFirst.put(key + "&" + listCell[p], key + "->" + oneLeft);
                             break;
                         }
 //                        走到这一步代表这个符号是非终结符号了,有点好奇为什么加入栈
@@ -385,8 +392,9 @@ public class Grammar {
 //                                    如果该终结符号是$的话
                                     if(listGoCell[0].equals("$")){
 //                                    开始符号不能推出空
-                                        if(!key.equals(S)){
+                                        if(!key.equals(S)&&p==isVn.length-1){
                                             firstCell.add(listGoCell[0]);
+                                            oneLeftFirst.put(key + "&" + listGoCell[0], key + "->" + oneLeft);
                                         }
                                         if(p+1<isVn.length){
                                             isVn[p+1]=true;
@@ -395,6 +403,7 @@ public class Grammar {
 //                                    如果终结符号不是$的话
                                     else{
                                         firstCell.add(listGoCell[0]);
+                                        oneLeftFirst.put(key + "&" + listGoCell[0], key + "->" + oneLeft);
                                     }
                                 }
 //                                如果该非终结符号的产生式的第一个符号不是终结符号的话,入栈继续判断
@@ -415,5 +424,308 @@ public class Grammar {
             FIRST.put(key,firstCell);
         }
         System.out.println(FIRST+"FIRST");
+    }
+
+    //获得Follow集
+    public void getFollow() {
+        //迭代器,方便对容器中的元素进行遍历
+        Iterator<String> it = VN.iterator();
+        HashMap<String, HashSet<String>> keyFollow = new HashMap<>();
+        // 用于存放/A->...B 或者 A->...Bε的组合
+        ArrayList<HashMap<String, String>> VnList = new ArrayList<>();
+        HashSet<String> VnListLeft = new HashSet<>();
+        HashSet<String> VnListRight = new HashSet<>();
+        //开始符号加入#
+        //在创建hashset的同时进行add操作
+        keyFollow.put(S, new HashSet<String>() {
+            private static final long serialVersionUID = 1L;
+
+            {
+                add(new String("#"));
+            }
+        });
+
+        while (it.hasNext()) {
+            String key = it.next();
+            //将产生式的右部变换为二维数组类型
+            ArrayList<ArrayList<String>> list = right2Array(productions.get(key));
+            ArrayList<String> listCell;
+
+            //先把每个VN作为keyFollow的key,之后再查找添加其Follow元素
+            if (!keyFollow.containsKey(key)) {
+                keyFollow.put(key, new HashSet<>());
+            }
+            keyFollow.toString();
+
+            for (ArrayList<String> arrayList : list) {
+                listCell = arrayList;
+
+                //1.直接找非终结符号后面跟着终结符号
+                for (int i = 1; i < listCell.size(); i++) {
+                    HashSet<String> set = new HashSet<>();
+                    if (VT.contains(listCell.get(i))) {
+                        set.add(listCell.get(i));
+                        //如果keyFollow中键包含当前终结符前面的那个非终结符时,将该键所对应的set重新加入至当前set集合,进行更新
+                        if (keyFollow.containsKey(listCell.get(i - 1))) {
+                            set.addAll(keyFollow.get(listCell.get(i - 1)));
+                        }
+                        keyFollow.put(listCell.get(i - 1), set);
+                    }
+                }
+                //2.找...VnVn...组合
+                for (int i = 0; i < listCell.size() - 1; i++) {
+                    HashSet<String> set = new HashSet<>();
+                    //如果当前是一个非终结符而且之后一个仍然是非终结符
+                    if (VN.contains(listCell.get(i)) && VN.contains(listCell.get(i + 1))) {
+                        set.addAll(FIRST.get(listCell.get(i + 1)));
+                        set.remove(EPSILON);
+
+                        if (keyFollow.containsKey(listCell.get(i))) {
+                            set.addAll(keyFollow.get(listCell.get(i)));
+                        }
+                        keyFollow.put(listCell.get(i), set);
+                    }
+                }
+                //3.A->...B或者A->...B$(可以有n个$)的组合存起来
+                for (int i = 0; i < listCell.size(); i++) {
+                    HashMap<String, String> newVn;
+                    // 是VN且A不等于B(产生式左部的非终结符)
+                    if (VN.contains(listCell.get(i)) && !listCell.get(i).equals(key)) {
+                        //标记VN后是否为空
+                        boolean isAllNull = false;
+                        //即A->...B$(可以有多个$)
+                        if (i + 1 < listCell.size()) {
+                            for (int j = i + 1; j < listCell.size(); j++) {
+                                //如果其后面的都是VN且其FIRST中包含EPSILON
+                                if ((FIRST.containsKey(listCell.get(j)) ? FIRST.get(listCell.get(j)).contains(EPSILON)
+                                        : false)) {
+                                    isAllNull = true;
+                                } else {
+                                    isAllNull = false;
+                                    break;
+                                }
+                            }
+                        }
+                        //如果是最后一个为VN,即A->...B
+                        if (i == listCell.size() - 1) {
+                            isAllNull = true;
+                        }
+                        if (isAllNull) {
+                            VnListLeft.add(key);
+                            VnListRight.add(listCell.get(i));
+
+                            //往VnList中添加,分存在和不存在两种情况
+                            boolean isHaveAdd = false;
+                            for (int x = 0; x < VnList.size(); x++) {
+                                HashMap<String, String> VnListCell = VnList.get(x);
+                                if (!VnListCell.containsKey(key)) {
+                                    VnListCell.put(key, listCell.get(i));
+                                    VnList.set(x, VnListCell);
+                                    isHaveAdd = true;
+                                    break;
+                                } else {
+                                    //去重
+                                    if (VnListCell.get(key).equals(listCell.get(i))) {
+                                        isHaveAdd = true;
+                                        break;
+                                    }
+                                    continue;
+                                }
+                            }
+                            //如果没有添加,表示是新的组合
+                            if (!isHaveAdd) {
+                                newVn = new HashMap<>();
+                                newVn.put(key, listCell.get(i));
+                                VnList.add(newVn);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        keyFollow.toString();
+
+        //4.VnListLeft减去VnListRight,剩下的就是入口产生式
+        VnListLeft.removeAll(VnListRight);
+        //用栈或者队列都可以
+        Queue<String> keyQueue = new LinkedList<>();
+        Iterator<String> itVnVn = VnListLeft.iterator();
+        while (itVnVn.hasNext()) {
+            keyQueue.add(itVnVn.next());
+        }
+        while (!keyQueue.isEmpty()) {
+            String keyLeft = keyQueue.poll();
+            for (int t = 0; t < VnList.size(); t++) {
+                HashMap<String, String> VnListCell = VnList.get(t);
+                if (VnListCell.containsKey(keyLeft)) {
+                    HashSet<String> set = new HashSet<>();
+                    //原来的FOLLOW加上左边的FOLLOW
+                    if (keyFollow.containsKey(keyLeft)) {
+                        set.addAll(keyFollow.get(keyLeft));
+                    }
+                    if (keyFollow.containsKey(VnListCell.get(keyLeft))) {
+                        set.addAll(keyFollow.get(VnListCell.get(keyLeft)));
+                    }
+                    keyFollow.put(VnListCell.get(keyLeft), set);
+                    keyQueue.add(VnListCell.get(keyLeft));
+
+                    //移除已处理的组合
+                    VnListCell.remove(keyLeft);
+                    VnList.set(t, VnListCell);
+                }
+            }
+        }
+        //莫名会出现$,目前没有发现问题出在哪
+        for (int cnt =0;cnt<VN.size();cnt++){
+            keyFollow.get(VN.get(cnt)).remove(EPSILON);
+        }
+        HashMap<String,HashSet<String>> res = new HashMap<>();
+        for (String s:VN){
+            res.put(s,keyFollow.get(s));
+        }
+        //此时keyFollow为完整的FOLLOW集
+        FOLLOW = res;
+        System.out.println(FOLLOW);
+    }
+
+
+
+    //将产生式右部转化为ArrayList<ArrayList<String>>
+    private ArrayList<ArrayList<String>> right2Array(ArrayList<String> arrayList) {
+        ArrayList<ArrayList<String>> arrayLists = new ArrayList<>();
+        for (String s : arrayList) {
+            List<String> list = Arrays.asList(s.split(" "));
+            ArrayList<String> tempList = new ArrayList<>(list);
+            arrayLists.add(tempList);
+        }
+        return arrayLists;
+    }
+
+    public  boolean isLL1() {
+//      开始的时候假定是ll1文法
+        boolean flag = true;
+//        开始去找每一个非终结符号,找他们的first集合和follow集合
+        Iterator<String> it = VN.iterator();
+        while (it.hasNext()){
+//            拿到每条产生式
+            String key = it.next();
+            ArrayList<String> list = productions.get(key);
+//            如果非终结符号的产生式子包含两条
+            if(list.size()>1){
+//                遍历每一条产生式
+
+                for(int i = 0;i<list.size();i++){
+                    String aLeft = new String(list.get(i));
+                        if(aLeft.equals("$")){
+//                            使用深度拷贝，防止数据修改了然后回不去
+                            HashSet<String> retainSet = new HashSet<>(FIRST.get(key));
+//                            如果follow集合也包含,这里有点奇怪
+                            if(FOLLOW.get(key)!=null){
+                                retainSet.retainAll(FOLLOW.get(key));
+                            }
+//                            如果不是空的,那么就代表不是ll1
+                            if(!retainSet.isEmpty()){
+                                flag =false;
+                                System.out.println("\tFIRST("+key+") ∩ FOLLOW(" + key + ") = {"
+                                        + String.join("、", retainSet.toArray(new String[retainSet.size()])) + "}");
+                                break;
+                            }else{
+                                System.out.println("\tFIRST(" + key + ") ∩ FOLLOW(" + key + ") = φ");
+                            }
+                        }
+//                        else { // (2)b!＝ε若,则要FIRST(a)∩FIRST(b)= Ф
+//                            HashSet<String> retainSet = new HashSet<>();
+//                            retainSet.addAll(FIRST.get(key + "->" + aLeft));
+//                            retainSet.retainAll(FIRST.get(key + "->" + bLeft));
+//                            if (!retainSet.isEmpty()) {
+//                                flag = false;// 不是LL(1)文法，输出FIRST(a)FIRST(b)的交集
+//                                System.out.println("\tFIRST(" + aLeft + ") ∩ FIRST(" + bLeft + ") = {"
+//                                        + String.join("、", retainSet.toArray(new String[retainSet.size()])) + "}");
+//                                break;
+//                            } else {
+//                                System.out.println("\tFIRST(" + aLeft + ") ∩ FIRST(" + bLeft + ") = φ");
+//                            }
+//                        }
+                }
+            }
+        }
+        if(flag)
+            System.out.println("\t是LL1文法，继续分析");
+        else
+            System.out.println("\t不是ll1文法,退出分析");
+        return flag;
+    }
+    //构建预测分析表
+    public void preForm(){
+//        进行深度拷贝,并且移除终结符号
+        HashSet<String> set = new HashSet<>(VT);
+        set.remove("$");
+
+        FORM = new String[VN.size()+1][set.size()+2];
+
+        Iterator<String> itVn = VN.iterator();
+        Iterator<String> itVt = set.iterator();
+
+//        初始化form并且根据oneleftFirst(VN$VT,产生式进行填表)
+        for(int i =0;i<FORM.length;i++){
+            for (int j = 0; j < FORM[0].length; j++) {
+//                第一行为Vt，最后一列放进去#
+                if(i==0&&j>0){
+                    if (itVt.hasNext()){
+                        FORM[i][j] = itVt.next();
+                    }
+                    if(j==FORM[0].length-1){
+                        FORM[i][j] = "#";
+                    }
+                }
+//                第一列为Vn
+                if(j==0&&i>0){
+                    if(itVn.hasNext()){
+                        FORM[i][j]=itVn.next();
+                    }
+                }
+//                其他情况根据oneLeftFirst进行填表
+                if(i>0&&j>0){
+                    String oneLeftkey = FORM[i][0]+"&"+FORM[0][j];
+                    FORM[i][j] =oneLeftFirst.get(oneLeftkey);
+                }
+            }
+        }
+
+//        如果退出来$就根据FOLLOW填表
+        for (int i = 1; i < FORM.length; i++) {
+            String oneLeftKey = FORM[i][0]+"&$";
+            if(oneLeftFirst.containsKey(oneLeftKey)){
+                HashSet<String> followCell = FOLLOW.get(FORM[i][0]);
+                Iterator<String> it = followCell.iterator();
+                while(it.hasNext()){
+                    String vt = it.next();
+                    for (int j = 1; j <FORM.length ; j++) {
+                        for (int k = 1; k <FORM[0].length ; k++) {
+                            if(FORM[j][0].equals(FORM[i][0])&&FORM[0][k].equals(vt))
+                                FORM[j][k] = oneLeftFirst.get(oneLeftKey);
+                        }
+                    }
+                }
+            }
+        }
+//    打印预测分析表
+        System.out.println("\n该文法的预测分析表为：");
+        for (int i = 0; i < FORM.length; i++) {
+            for (int j = 0; j < FORM[0].length; j++) {
+                if (FORM[i][j] == null)
+                    System.out.print(" " + "\t");
+                else {
+                    System.out.print(FORM[i][j] + "\t");
+                    if (i > 0 && j > 0) {
+                        String[] tmp = FORM[i][j].split("->");
+                        preMap.put(FORM[i][0] + "" + FORM[0][j], tmp[1]);
+                    }
+                }
+            }
+            System.out.println();
+        }
+        System.out.println();
     }
 }
