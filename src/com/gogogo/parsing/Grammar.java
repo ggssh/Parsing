@@ -1,7 +1,6 @@
 package com.gogogo.parsing;
 
 import com.sun.istack.internal.NotNull;
-import org.omg.CORBA.IRObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +38,9 @@ public class Grammar {
     }
 
     //读取产生式
+    /*
+    TODO |后面加空格会出现bug
+     */
     public void setProductions(String filePath) {
         try {
             File file = new File(filePath);
@@ -201,6 +203,38 @@ public class Grammar {
         }
         //重新设置非终结符集
         VN = new ArrayList<String>(productions.keySet());
+    }
+
+    //重新写消除左递归
+    public void eliminateLeftRecursion() {
+        HashMap<String, ArrayList<ArrayList<String>>> strArrayMap = new HashMap<>();
+        for (int i = 0; i < VN.size(); i++) {
+            //将每个产生式的右部转化为二维ArrayList
+            strArrayMap.put(VN.get(i), right2Array(productions.get(VN.get(i))));
+        }
+        for (int i = 0; i < VN.size(); i++) {
+            for (int j = 0; j <= i - 1; j++) {
+                //k小于二维ArrayList的size()
+                for (int k = 0; k < strArrayMap.get(VN.get(i)).size(); k++) {
+                    //将形如Ni->Njα的产生式中的Nj用Nj产生式右部替换
+                    if (strArrayMap.get(VN.get(i)).get(k).get(0).equals(VN.get(j))) {
+                        int count = 0;
+                        for (ArrayList<String> stringArrayList : strArrayMap.get(VN.get(j))) {
+                            //将该产生式添加到新临时产生式中,然后将之前的Ni中的剩余产生式添加至临时产生式中
+                            ArrayList<String> arrayList = new ArrayList<>(stringArrayList);
+                            //将剩余的产生式添加至临时产生式中
+                            for (int cntNi = 1; cntNi < strArrayMap.get(VN.get(i)).get(k).size(); cntNi++) {
+                                arrayList.add(strArrayMap.get(VN.get(i)).get(k).get(cntNi));
+                            }
+                            //将该临时产生式添加至原以Ni为左部的产生式的末尾
+                            strArrayMap.get(VN.get(i)).add(k+1+count++,arrayList);
+                        }
+                        strArrayMap.get(VN.get(i)).remove(k);
+                    }
+                }
+            }
+        }
+        System.out.println(strArrayMap);
     }
 
     //消除直接左递归
