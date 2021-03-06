@@ -433,6 +433,9 @@ public class Grammar {
     }
 
     //获得Follow集
+    /*
+    TODO 需要增加判断Follow集不再增长的条件
+     */
     public void getFollow() {
         HashMap<String, HashSet<String>> keyFollow = new HashMap<>();
         //先对keyFollow进行初始化,之后再进行元素的增加
@@ -442,81 +445,109 @@ public class Grammar {
         //开始符号加入#
         keyFollow.put(START, new HashSet<String>() {
             private static final long serialVersionUID = 1L;
+
             {
                 add(new String("#"));
             }
         });
-        //使用迭代器更方便的进行遍历
-        Iterator<String> iteratorVn = VN.iterator();
-        //开始对每个非终结符进行遍历
-        while (iteratorVn.hasNext()) {
-            String key = iteratorVn.next();
-            ArrayList<ArrayList<String>> list = new ArrayList<>(right2Array(productions.get(key)));
-            //ArrayList<String> listCell;
+        HashMap<String, HashSet<String>> isChange = new HashMap<>(keyFollow);
+        int count = 0;
+        while (true) {
+            //使用迭代器更方便的进行遍历
+            Iterator<String> iteratorVn = VN.iterator();
+            //开始对每个非终结符进行遍历
+            while (iteratorVn.hasNext()) {
+                String key = iteratorVn.next();
+                ArrayList<ArrayList<String>> list = new ArrayList<>(right2Array(productions.get(key)));
+                //ArrayList<String> listCell;
 
-            for (ArrayList<String> strList : list){
-                for(int i =0;i<strList.size();i++){
-                    if (i==strList.size()-1){
-                        HashSet<String> set = new HashSet<>();
-                        //如果最后一个是非终结符,则其follow集中加入follow(key)
-                        if (VN.contains(strList.get(i))){
-                            set.addAll(keyFollow.get(key));
-                            set.remove(EPSILON);
-                            keyFollow.put(strList.get(i),set);
-                        }
-                    }else{
-                        //如果当前为非终结符,则需要判断其后面是终结符还是非终结符
-                        //如果后面是终结符,则其follow集中加入该终结符
-                        //如果后面是非终结符,需要分为两种情况
-                        //1.推不出来空,则直接将这个非终结符的first集加入
-                        //2.若能推出来空，则将这个非终结符的first集加入，接着往后直到遇到推不出空或者终结符
-                        if (VN.contains(strList.get(i))){//只有第一个为非终结符的才能够
-                            //如果后面挨着的是一个终结符,直接将其加入follow集中
-                            if (VT.contains(strList.get(i+1))){
-                                HashSet<String> set = new HashSet<>();
-                                set.add(strList.get(i+1));
-                                //判断keyFollow中是否已经存在该key,如果有的话需要进行set的更新,避免产生覆盖
-                                if (keyFollow.containsKey(strList.get(i))){
-                                    set.addAll(keyFollow.get(strList.get(i)));
-                                    //移除EPSION符号
-                                    set.remove(EPSILON);
-                                }
-                                keyFollow.put(strList.get(i),set);
-                            }else{//后面是非终结符,进行分类讨论
-                                HashSet<String> set = new HashSet<>();
-                                for (int j=i+1;j<strList.size();j++){
-                                    //如果当前为一个终结符,则将其加入follow(strList.get(i))中
-                                    if (VT.contains(strList.get(j))){
-                                        set.add(strList.get(j));
-                                        break;
-                                    }else{
-                                        set.addAll(FIRST.get(strList.get(j)));
-                                        //如果该非终结符没有办法推出空,则说明follow集添加完毕
-                                        if(!FIRST.get(strList.get(j)).contains(EPSILON)){
+                for (ArrayList<String> strList : list) {
+                    for (int i = 0; i < strList.size(); i++) {
+                        if (i == strList.size() - 1) {
+                            HashSet<String> set = new HashSet<>();
+                            //如果最后一个是非终结符,则其follow集中加入follow(key)
+                            if (VN.contains(strList.get(i))) {
+                                set.addAll(keyFollow.get(key));
+                                set.remove(EPSILON);
+                                keyFollow.put(strList.get(i), set);
+                            }
+                        } else {
+                            //如果当前为非终结符,则需要判断其后面是终结符还是非终结符
+                            //如果后面是终结符,则其follow集中加入该终结符
+                            //如果后面是非终结符,需要分为两种情况
+                            //1.推不出来空,则直接将这个非终结符的first集加入
+                            //2.若能推出来空，则将这个非终结符的first集加入，接着往后直到遇到推不出空或者终结符
+                            if (VN.contains(strList.get(i))) {//只有第一个为非终结符的才能够
+                                //如果后面挨着的是一个终结符,直接将其加入follow集中
+                                if (VT.contains(strList.get(i + 1))) {
+                                    HashSet<String> set = new HashSet<>();
+                                    set.add(strList.get(i + 1));
+                                    //判断keyFollow中是否已经存在该key,如果有的话需要进行set的更新,避免产生覆盖
+                                    if (keyFollow.containsKey(strList.get(i))) {
+                                        set.addAll(keyFollow.get(strList.get(i)));
+                                        //移除EPSION符号
+                                        set.remove(EPSILON);
+                                    }
+                                    keyFollow.put(strList.get(i), set);
+                                } else {//后面是非终结符,进行分类讨论
+                                    HashSet<String> set = new HashSet<>();
+                                    for (int j = i + 1; j < strList.size(); j++) {
+                                        //如果当前为一个终结符,则将其加入follow(strList.get(i))中
+                                        if (VT.contains(strList.get(j))) {
+                                            set.add(strList.get(j));
                                             break;
-                                        }
-                                        //如果到了最后一个还是会推出来空,则加入keyFollow(key),经过上面的if语句后没有推出说明其还是会推出空
-                                        if (j==strList.size()-1){
-                                            set.addAll(keyFollow.get(key));
+                                        } else {
+                                            set.addAll(FIRST.get(strList.get(j)));
+                                            //如果该非终结符没有办法推出空,则说明follow集添加完毕
+                                            if (!FIRST.get(strList.get(j)).contains(EPSILON)) {
+                                                break;
+                                            }
+                                            //如果到了最后一个还是会推出来空,则加入keyFollow(key),经过上面的if语句后没有推出说明其还是会推出空
+                                            if (j == strList.size() - 1) {
+                                                set.addAll(keyFollow.get(key));
+                                            }
                                         }
                                     }
+                                    //判断keyFollow中是否已经存在该key,如果有的话需要进行set的更新,避免产生覆盖
+                                    if (keyFollow.containsKey(strList.get(i))) {
+                                        set.addAll(keyFollow.get(strList.get(i)));
+                                        set.remove(EPSILON);
+                                    }
+                                    keyFollow.put(strList.get(i), set);
                                 }
-                                //判断keyFollow中是否已经存在该key,如果有的话需要进行set的更新,避免产生覆盖
-                                if (keyFollow.containsKey(strList.get(i))){
-                                    set.addAll(keyFollow.get(strList.get(i)));
-                                    set.remove(EPSILON);
-                                }
-                                keyFollow.put(strList.get(i),set);
                             }
                         }
                     }
                 }
             }
+//            boolean isEqual = true;
+//            for (String vn:VN){
+//                if (isChange.get(vn).size()!=0){
+//                    if (isChange.get(vn).size()!=keyFollow.get(vn).size()){
+//                        isEqual=false;
+//                        break;
+//                    }
+//                }
+//            }
+//            isChange=keyFollow;
+            //当keyFollow集不再增长时,说明已经完成,不过仅仅一次并不能作为循环结束的条件
+            if (!isChange.equals(keyFollow) && isChange.hashCode() != keyFollow.hashCode()) {
+                isChange = keyFollow;
+            } else {
+                count++;
+            }
+            if (count == VN.size()) break;
+//            if (isEqual){
+//                break;
+//            }else {
+//                isChange=keyFollow;
+//            }
         }
-        FOLLOW=keyFollow;
+        FOLLOW = keyFollow;
     }
 
     public HashMap<String, HashSet<String>> getFOLLOW() {
         return FOLLOW;
     }
+
 }
