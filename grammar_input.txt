@@ -1,3 +1,8 @@
-S->A B c
-A->a|$
-B->b|$
+E->T K
+K->+ T K
+K->$
+T->F M
+M->* F M
+M->$
+F->i
+F->( E )

@@ -32,6 +32,8 @@ public class test {
         System.out.println("VT "+grammar.getVT());
         System.out.println("First "+grammar.getFIRST());
         System.out.println("Follow "+ grammar.getFOLLOW());
-        grammar.grammarOutput();
+        //grammar.grammarOutput();
+        System.out.println(grammar.isLL1());
+        grammar.preForm();
     }
 }
