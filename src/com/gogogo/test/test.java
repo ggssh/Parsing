@@ -22,16 +22,18 @@ public class test {
         //消除左递归
         grammar.allLeftRecursive();
         //提取左公共因子
-        //grammar.leftFactoring();
+        grammar.leftFactoring();
         //获得First集
-        //grammar.getFirst();
+        grammar.getFirst();
         //获得Follow集
-        //grammar.getFollow();
+        grammar.getFollow();
         //System.out.println(grammar.getProductions());
         System.out.println("VN "+grammar.getVN());
         System.out.println("VT "+grammar.getVT());
         System.out.println("First "+grammar.getFIRST());
         System.out.println("Follow "+ grammar.getFOLLOW());
-        grammar.grammarOutput();
+        //grammar.grammarOutput();
+        System.out.println(grammar.isLL1());
+        grammar.preForm();
     }
 }

@@ -1,7 +1,8 @@
-E->T E'
-E'->+ E|$
-T->F T'
-T'->T|$
-F->P F'
-F'->* F'|$
-P->( E )|a|b|^
+E->T K
+K->+ T K
+K->$
+T->F M
+M->* F M
+M->$
+F->i
+F->( E )

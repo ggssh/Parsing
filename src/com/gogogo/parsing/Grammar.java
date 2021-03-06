@@ -23,6 +23,9 @@ public class Grammar {
     HashMap<String, ArrayList<String>> productions;//产生式集
     public static final char SINGLE_ANGLE_QUOTE = '\'';//用来替换非终结符
     public static final String EPSILON = "$";//用来代替ε
+    private static String[][] FORM; // 存放预测分析表的数组，用于输出
+    private static HashMap<String, String> preMap;// 存放预测分析表的map，用于快速查找
+    private static HashMap<String, String> oneLeftFirst;// "|" 分开的单条产生式对应的FIRST集合,用于构建预测分析表
 
     public Grammar() {
         VT = new ArrayList<>();
@@ -31,6 +34,8 @@ public class Grammar {
         FIRST = new HashMap<>();
         FOLLOW = new HashMap<>();
         productions = new HashMap<>();
+        oneLeftFirst = new HashMap<>();
+        preMap = new HashMap<>();
     }
 
     //读取产生式
@@ -350,66 +355,72 @@ public class Grammar {
 
     //获得First集
     public void getFirst() {
-        //first集合
+//      first集合
         Iterator<String> it = VN.iterator();
-        //遍历每一个非终结符号
+//        遍历每一个非终结符号
         while (it.hasNext()) {
-            //存放单个非终结符号的FIRST
+//            存放单个非终结符号的FIRST
             HashSet<String> firstCell = new HashSet<>();
-            //读取非终结符号的所有产生式
+//
+//            读取非终结符号的所有产生式
             String key = it.next();
             ArrayList<String> list = productions.get(key);
-            //遍历非终结符号的所有产生式
-            for (String s : list) {
-                //将每个产生式读取进去字符串数组,方便后续的操作
-                String[] listCell = s.split(" ");
-                //如果第一个字符是终结符号,就直接加入
+//            遍历非终结符号的所有产生式
+            for (int i = 0; i < list.size(); i++) {
+//                将每个产生式读取进去字符串数组,方便后续的操作
+                String[] listCell = list.get(i).split(" ");
+                String oneLeft = list.get(i);
+//                如果第一个字符是终结符号,就直接加入
                 if (VT.contains(listCell[0])) {
                     firstCell.add(listCell[0]);
+                    oneLeftFirst.put(key + "&" + listCell[0], key + "->" + oneLeft);
                 }
-                //如果不是终结符号,就进行一系列的逻辑处理
+//                如果不是终结符号,就进行一系列的逻辑处理
                 else {
                     //标记是否有定义为空,如果有就检查下一个字符
                     boolean[] isVn = new boolean[listCell.length];
                     //第一个符号肯定是非终结符号,所以先检查第一个
                     int p = 0;
                     isVn[p] = true;
-                    //从第一个开始检查
+//                    从第一个开始检查
                     while (isVn[p]) {
-                        //如果p指的位置出现了终结符号,那么就直接加入FIRST集合,并且直接跳出循环
+//                        如果p指的位置出现了终结符号,那么就直接加入FIRST集合,并且直接跳出循环
                         if (VT.contains(listCell[p])) {
                             firstCell.add(listCell[p]);
+                            oneLeftFirst.put(key + "&" + listCell[p], key + "->" + oneLeft);
                             break;
                         }
-                        //走到这一步代表这个符号是非终结符号了,有点好奇为什么加入栈
+//                        走到这一步代表这个符号是非终结符号了,有点好奇为什么加入栈
                         String vnGo = listCell[p];
                         Stack<String> stack = new Stack<>();
                         stack.push(vnGo);
                         while (!stack.empty()) {
                             //拿到这些非终结符号的产生式(就是栈顶元素的)
                             ArrayList<String> listGo = productions.get(stack.pop());
-                            //遍历这个非终结符号的每一个产生式
-                            for (String go : listGo) {
-                                //先拿到第一个产生式
-                                String[] listGoCell = go.split(" ");
-                                //如果该非终结符号的产生式的第一个符号是终结符号的话
+//                            遍历这个非终结符号的每一个产生式
+                            for (int k = 0; k < listGo.size(); k++) {
+//                                先拿到第一个产生式
+                                String[] listGoCell = listGo.get(k).split(" ");
+//                                如果该非终结符号的产生式的第一个符号是终结符号的话
                                 if (VT.contains(listGoCell[0])) {
-                                    //如果该终结符号是$的话
-                                    if (listGoCell[0].equals(EPSILON)) {
-                                        //开始符号不能推出空
-                                        if (!key.equals(START)) {
+//                                    如果该终结符号是$的话
+                                    if (listGoCell[0].equals("$")) {
+//                                    开始符号不能推出空
+                                        if (!key.equals(START) && p == isVn.length - 1) {
                                             firstCell.add(listGoCell[0]);
+                                            oneLeftFirst.put(key + "&" + listGoCell[0], key + "->" + oneLeft);
                                         }
                                         if (p + 1 < isVn.length) {
                                             isVn[p + 1] = true;
                                         }
                                     }
-                                    //如果终结符号不是$的话
+//                                    如果终结符号不是$的话
                                     else {
                                         firstCell.add(listGoCell[0]);
+                                        oneLeftFirst.put(key + "&" + listGoCell[0], key + "->" + oneLeft);
                                     }
                                 }
-                                //如果该非终结符号的产生式的第一个符号不是终结符号的话,入栈继续判断
+//                                如果该非终结符号的产生式的第一个符号不是终结符号的话,入栈继续判断
                                 else {
                                     stack.push(listGoCell[0]);
                                 }
@@ -423,7 +434,7 @@ public class Grammar {
                     }
                 }
             }
-            //将firstCell放进去FIRST集合
+//            将firstCell放进去FIRST集合
             FIRST.put(key, firstCell);
         }
     }
@@ -550,4 +561,131 @@ public class Grammar {
         return FOLLOW;
     }
 
+    public boolean isLL1() {
+//      开始的时候假定是ll1文法
+        boolean flag = true;
+//        开始去找每一个非终结符号,找他们的first集合和follow集合
+        Iterator<String> it = VN.iterator();
+        while (it.hasNext()) {
+//            拿到每条产生式
+            String key = it.next();
+            ArrayList<String> list = productions.get(key);
+//            如果非终结符号的产生式子包含两条
+            if (list.size() > 1) {
+//                遍历每一条产生式
+
+                for (int i = 0; i < list.size(); i++) {
+                    String aLeft = new String(list.get(i));
+                    if (aLeft.equals("$")) {
+//                            使用深度拷贝，防止数据修改了然后回不去
+                        HashSet<String> retainSet = new HashSet<>(FIRST.get(key));
+//                            如果follow集合也包含,这里有点奇怪
+                        if (FOLLOW.get(key) != null) {
+                            retainSet.retainAll(FOLLOW.get(key));
+                        }
+//                            如果不是空的,那么就代表不是ll1
+                        if (!retainSet.isEmpty()) {
+                            flag = false;
+                            System.out.println("\tFIRST(" + key + ") ∩ FOLLOW(" + key + ") = {"
+                                    + String.join("、", retainSet.toArray(new String[retainSet.size()])) + "}");
+                            break;
+                        } else {
+                            System.out.println("\tFIRST(" + key + ") ∩ FOLLOW(" + key + ") = φ");
+                        }
+                    }
+//                        else { // (2)b!＝ε若,则要FIRST(a)∩FIRST(b)= Ф
+//                            HashSet<String> retainSet = new HashSet<>();
+//                            retainSet.addAll(FIRST.get(key + "->" + aLeft));
+//                            retainSet.retainAll(FIRST.get(key + "->" + bLeft));
+//                            if (!retainSet.isEmpty()) {
+//                                flag = false;// 不是LL(1)文法，输出FIRST(a)FIRST(b)的交集
+//                                System.out.println("\tFIRST(" + aLeft + ") ∩ FIRST(" + bLeft + ") = {"
+//                                        + String.join("、", retainSet.toArray(new String[retainSet.size()])) + "}");
+//                                break;
+//                            } else {
+//                                System.out.println("\tFIRST(" + aLeft + ") ∩ FIRST(" + bLeft + ") = φ");
+//                            }
+//                        }
+                }
+            }
+        }
+        if (flag)
+            System.out.println("\t是LL1文法，继续分析");
+        else
+            System.out.println("\t不是ll1文法,退出分析");
+        return flag;
+    }
+
+    //构建预测分析表
+    public void preForm() {
+//        进行深度拷贝,并且移除终结符号
+        HashSet<String> set = new HashSet<>(VT);
+        set.remove("$");
+
+        FORM = new String[VN.size() + 1][set.size() + 2];
+
+        Iterator<String> itVn = VN.iterator();
+        Iterator<String> itVt = set.iterator();
+
+//        初始化form并且根据oneleftFirst(VN$VT,产生式进行填表)
+        for (int i = 0; i < FORM.length; i++) {
+            for (int j = 0; j < FORM[0].length; j++) {
+//                第一行为Vt，最后一列放进去#
+                if (i == 0 && j > 0) {
+                    if (itVt.hasNext()) {
+                        FORM[i][j] = itVt.next();
+                    }
+                    if (j == FORM[0].length - 1) {
+                        FORM[i][j] = "#";
+                    }
+                }
+//                第一列为Vn
+                if (j == 0 && i > 0) {
+                    if (itVn.hasNext()) {
+                        FORM[i][j] = itVn.next();
+                    }
+                }
+//                其他情况根据oneLeftFirst进行填表
+                if (i > 0 && j > 0) {
+                    String oneLeftkey = FORM[i][0] + "&" + FORM[0][j];
+                    FORM[i][j] = oneLeftFirst.get(oneLeftkey);
+                }
+            }
+        }
+
+//        如果退出来$就根据FOLLOW填表
+        for (int i = 1; i < FORM.length; i++) {
+            String oneLeftKey = FORM[i][0] + "&$";
+            if (oneLeftFirst.containsKey(oneLeftKey)) {
+                HashSet<String> followCell = FOLLOW.get(FORM[i][0]);
+                Iterator<String> it = followCell.iterator();
+                while (it.hasNext()) {
+                    String vt = it.next();
+                    for (int j = 1; j < FORM.length; j++) {
+                        for (int k = 1; k < FORM[0].length; k++) {
+                            if (FORM[j][0].equals(FORM[i][0]) && FORM[0][k].equals(vt))
+                                FORM[j][k] = oneLeftFirst.get(oneLeftKey);
+                        }
+                    }
+                }
+            }
+        }
+//    打印预测分析表
+        System.out.println("\n该文法的预测分析表为：");
+        for (int i = 0; i < FORM.length; i++) {
+            for (int j = 0; j < FORM[0].length; j++) {
+                if (FORM[i][j] == null)
+                    System.out.print(" " + "\t");
+                else {
+                    System.out.print(FORM[i][j] + "\t");
+                    if (i > 0 && j > 0) {
+                        String[] tmp = FORM[i][j].split("->");
+                        preMap.put(FORM[i][0] + "" + FORM[0][j], tmp[1]);
+                    }
+                }
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
 }
