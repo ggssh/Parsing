@@ -1,6 +1,7 @@
 package com.gogogo.parsing;
 
 import com.sun.istack.internal.NotNull;
+import org.junit.platform.commons.util.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,6 +52,9 @@ public class Grammar {
                 String tempRight = line.split("->")[1].trim();
                 List<String> temp = Arrays.asList(tempRight.split("\\|"));
                 ArrayList<String> right = new ArrayList<>(temp);
+                for (String str : right){
+                    str = str.trim();
+                }
                 if (productions.get(left) == null) {
                     productions.put(left, right);
                 } else {
@@ -123,87 +127,87 @@ public class Grammar {
     }
 
     //消除左递归
-    public void allLeftRecursive() {
-        if (productions == null || VN == null) {
-            throw new RuntimeException("ERROR");
-        }
-        String res = "";
-        //新建一个二维数组
-        HashMap<String, ArrayList<String>> tempProduction = new HashMap<>(productions);
-        HashMap<String, ArrayList<ArrayList<String>>> temp = new HashMap<>();
-        for (int count = 0; count < tempProduction.size(); count++) {
-            ArrayList<ArrayList<String>> temp2ArrayList = new ArrayList<>();
-            for (int l = 0; l < tempProduction.get(VN.get(count)).size(); l++) {
-                List<String> tempList =
-                        Arrays.asList(tempProduction.get(VN.get(count)).get(l).split(" "));
-                ArrayList<String> tempArrayList = new ArrayList<>(tempList);
-                temp2ArrayList.add(tempArrayList);
-            }
-            temp.put(VN.get(count), temp2ArrayList);
-        }
-        for (int i = 0; i < VN.size(); i++) {
-            //根据非终结符获取产生式的右部
-            ArrayList<ArrayList<String>> Ai = temp.get(VN.get(i));
-            //ArrayList<String> Ai = productions.get(VN.get(i));
-            if (Ai == null) {
-                throw new RuntimeException("ERROR");
-            }
-            StringBuilder builder = new StringBuilder();
-            //用于标记当前产生式的右部是否包含左递归
-            boolean flag = false;
-            for (int j = 0; j < i; j++) {
-                if (Ai.get(0).indexOf(VN.get(j)) == 0) {
-                    //说明该产生式包含左递归，可以替换
-                    flag = true;
-                    ArrayList<ArrayList<String>> Aj = temp.get(VN.get(j));
-                    if (Aj == null) {
-                        throw new RuntimeException("ERROR");
-                    }
-                    int k = 0;
-                    for (; k < Ai.size(); k++) {
-                        if (Ai.get(k).indexOf(VN.get(j)) == 0) {
-                            StringBuilder ts = new StringBuilder();
-                            for (int m = 1; m < Ai.get(k).size(); m++) {
-                                //每次append之后都要加入一个空格
-                                ts.append(Ai.get(k).get(m)).append(" ");
-                            }
-                            for (ArrayList<String> aj : Aj) {
-                                StringBuilder tempAj = new StringBuilder();
-                                for (String s : aj) {
-                                    tempAj.append(s).append(" ");
-                                }
-                                builder.append(tempAj).append(ts).append("|");
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                    for (; k < Ai.size(); k++) {
-                        StringBuilder tempAi = new StringBuilder();
-                        for (String s : Ai.get(k)) {
-                            tempAi.append(s).append(" ");
-                        }
-                        builder.append(tempAi).append("|");
-                    }
-                    ArrayList<ArrayList<String>> resDoubleArrayList = new ArrayList<>();
-                    List<String> resList = Arrays.asList(builder.toString().split("\\|"));
-                    ArrayList<String> resArrayList = new ArrayList<>(resList);
-                    for (String tempS : resArrayList) {
-                        List<String> list = Arrays.asList(tempS.split(" "));
-                        resDoubleArrayList.add(new ArrayList<>(list));
-                    }
-                    Ai = resDoubleArrayList;
-                    builder.setLength(0);
-                }
-            }
-            //消除Ai中的一切直接左递归
-            if (flag || Ai.get(0).indexOf(VN.get(i)) == 0) {
-                directLeftRecursive(VN.get(i), Ai);
-            }
-        }
-        //重新设置非终结符集
-        VN = new ArrayList<String>(productions.keySet());
-    }
+//    public void allLeftRecursive() {
+//        if (productions == null || VN == null) {
+//            throw new RuntimeException("ERROR");
+//        }
+//        String res = "";
+//        //新建一个二维数组
+//        HashMap<String, ArrayList<String>> tempProduction = new HashMap<>(productions);
+//        HashMap<String, ArrayList<ArrayList<String>>> temp = new HashMap<>();
+//        for (int count = 0; count < tempProduction.size(); count++) {
+//            ArrayList<ArrayList<String>> temp2ArrayList = new ArrayList<>();
+//            for (int l = 0; l < tempProduction.get(VN.get(count)).size(); l++) {
+//                List<String> tempList =
+//                        Arrays.asList(tempProduction.get(VN.get(count)).get(l).split(" "));
+//                ArrayList<String> tempArrayList = new ArrayList<>(tempList);
+//                temp2ArrayList.add(tempArrayList);
+//            }
+//            temp.put(VN.get(count), temp2ArrayList);
+//        }
+//        for (int i = 0; i < VN.size(); i++) {
+//            //根据非终结符获取产生式的右部
+//            ArrayList<ArrayList<String>> Ai = temp.get(VN.get(i));
+//            //ArrayList<String> Ai = productions.get(VN.get(i));
+//            if (Ai == null) {
+//                throw new RuntimeException("ERROR");
+//            }
+//            StringBuilder builder = new StringBuilder();
+//            //用于标记当前产生式的右部是否包含左递归
+//            boolean flag = false;
+//            for (int j = 0; j < i; j++) {
+//                if (Ai.get(0).indexOf(VN.get(j)) == 0) {
+//                    //说明该产生式包含左递归，可以替换
+//                    flag = true;
+//                    ArrayList<ArrayList<String>> Aj = temp.get(VN.get(j));
+//                    if (Aj == null) {
+//                        throw new RuntimeException("ERROR");
+//                    }
+//                    int k = 0;
+//                    for (; k < Ai.size(); k++) {
+//                        if (Ai.get(k).indexOf(VN.get(j)) == 0) {
+//                            StringBuilder ts = new StringBuilder();
+//                            for (int m = 1; m < Ai.get(k).size(); m++) {
+//                                //每次append之后都要加入一个空格
+//                                ts.append(Ai.get(k).get(m)).append(" ");
+//                            }
+//                            for (ArrayList<String> aj : Aj) {
+//                                StringBuilder tempAj = new StringBuilder();
+//                                for (String s : aj) {
+//                                    tempAj.append(s).append(" ");
+//                                }
+//                                builder.append(tempAj).append(ts).append("|");
+//                            }
+//                        } else {
+//                            break;
+//                        }
+//                    }
+//                    for (; k < Ai.size(); k++) {
+//                        StringBuilder tempAi = new StringBuilder();
+//                        for (String s : Ai.get(k)) {
+//                            tempAi.append(s).append(" ");
+//                        }
+//                        builder.append(tempAi).append("|");
+//                    }
+//                    ArrayList<ArrayList<String>> resDoubleArrayList = new ArrayList<>();
+//                    List<String> resList = Arrays.asList(builder.toString().split("\\|"));
+//                    ArrayList<String> resArrayList = new ArrayList<>(resList);
+//                    for (String tempS : resArrayList) {
+//                        List<String> list = Arrays.asList(tempS.split(" "));
+//                        resDoubleArrayList.add(new ArrayList<>(list));
+//                    }
+//                    Ai = resDoubleArrayList;
+//                    builder.setLength(0);
+//                }
+//            }
+//            //消除Ai中的一切直接左递归
+//            if (flag || Ai.get(0).indexOf(VN.get(i)) == 0) {
+//                directLeftRecursive(VN.get(i), Ai);
+//            }
+//        }
+//        //重新设置非终结符集
+//        VN = new ArrayList<String>(productions.keySet());
+//    }
 
     //重新写消除左递归
     public void eliminateLeftRecursion() {
@@ -222,72 +226,123 @@ public class Grammar {
                         for (ArrayList<String> stringArrayList : strArrayMap.get(VN.get(j))) {
                             //将该产生式添加到新临时产生式中,然后将之前的Ni中的剩余产生式添加至临时产生式中
                             ArrayList<String> arrayList = new ArrayList<>(stringArrayList);
+                            arrayList.remove(EPSILON);
                             //将剩余的产生式添加至临时产生式中
                             for (int cntNi = 1; cntNi < strArrayMap.get(VN.get(i)).get(k).size(); cntNi++) {
                                 arrayList.add(strArrayMap.get(VN.get(i)).get(k).get(cntNi));
                             }
                             //将该临时产生式添加至原以Ni为左部的产生式的末尾
-                            strArrayMap.get(VN.get(i)).add(k+1+count++,arrayList);
+                            strArrayMap.get(VN.get(i)).add(k + 1 + count++, arrayList);
                         }
                         strArrayMap.get(VN.get(i)).remove(k);
                     }
                 }
             }
+            //根据情况进行消除左递归
+            eliminateDirectLeftRecursive(VN.get(i),strArrayMap.get(VN.get(i)));
         }
-        System.out.println(strArrayMap);
+        VN = new ArrayList<>(productions.keySet());
     }
-    //重新实现消除左递归
-    public void eliminateDirectLeftRecursive(String left,ArrayList<ArrayList<String>> right){
-        HashMap<String, ArrayList<ArrayList<String>>> strArrayMap = new HashMap<>();
-        for (int i = 0; i < VN.size(); i++) {
-            //将每个产生式的右部转化为二维ArrayList
-            strArrayMap.put(VN.get(i), right2Array(productions.get(VN.get(i))));
-        }
-        //用于替换的非终结符(如A')
-        String repl = left+SINGLE_ANGLE_QUOTE;
-        for (int i = 0;i<strArrayMap.get(left).size();i++){
-            if (strArrayMap.get(left).get(i).get(0).equals(left)){
 
-                strArrayMap.get(left).get(i).add(repl);
-                strArrayMap.get(left).remove(0);
-            }else {
-                strArrayMap.get(left).get(i).add(repl);
+    //重新实现消除直接左递归
+    public void eliminateDirectLeftRecursive(String left, ArrayList<ArrayList<String>> right) {
+//        HashMap<String, ArrayList<ArrayList<String>>> strArrayMap = new HashMap<>();
+//        for (int i = 0; i < VN.size(); i++) {
+//            //将每个产生式的右部转化为二维ArrayList
+//            strArrayMap.put(VN.get(i), right2Array(productions.get(VN.get(i))));
+//        }
+        //用于替换的非终结符(如A')
+        /*
+        直接左递归: A->A a|b
+        消除方法:   1.A->b A'
+                  2.A'->a A'|$
+         */
+        ArrayList<String> tempArrayList = new ArrayList<>();
+        tempArrayList.add(EPSILON);
+        right.remove(tempArrayList);
+        String repl = left + SINGLE_ANGLE_QUOTE;
+        //A的右部
+        ArrayList<ArrayList<String>> list1 = new ArrayList<>();
+        //A'的右部
+        ArrayList<ArrayList<String>> list2 = new ArrayList<>();
+        //判断当前产生式是否含有左递归
+        boolean flag = false;
+        for (ArrayList<String> arrayList : right) {
+            if (arrayList.get(0).equals(left)) {
+                //只要出现一次符合的情况就说明出现了左递归需要消除
+                flag = true;
+                //如果出现左递归,首先进行步骤一
+                ArrayList<String> temp = new ArrayList<>(arrayList);
+                temp.add(repl);
+                temp.remove(0);
+                list2.add(temp);
             }
+        }
+        //只有判断当前产生式中含有左递归时才需要进行接下来的处理
+        if (flag) {
+            //在A'的右部末尾添加EPSILON
+            ArrayList<String> tempList = new ArrayList<>();
+            tempList.add(EPSILON);
+            list2.add(tempList);
+            //目前还不清楚需不需要进行去重
+            for (ArrayList<String> arrayList : right) {
+                if (!arrayList.get(0).equals(left)) {
+                    ArrayList<String> temp = new ArrayList<>(arrayList);
+                    temp.add(repl);
+                    list1.add(temp);
+                }
+            }
+            ArrayList<String> resList1 = new ArrayList<>();
+            ArrayList<String> resList2 = new ArrayList<>();
+            for (ArrayList<String> tempList1:list1){
+                //String[] arr = (String[]) tempList1.toArray(new String[0]);
+                String str = String.join(" ",tempList1);
+                resList1.add(str);
+            }
+            for (ArrayList<String> tempList2:list2){
+                String str = String.join(" ",tempList2);
+                resList2.add(str);
+            }
+            productions.put(left,resList1);
+            productions.put(repl,resList2);
+            //productions.put(left,list1)
+//            System.out.println(left+"->"+list1);
+//            System.out.println(repl+"->"+list2);
         }
     }
 
     //消除直接左递归
-    private void directLeftRecursive(String left, @NotNull ArrayList<ArrayList<String>> right) {
-        //用于替换的非终结符(如A')
-        String repl = left + SINGLE_ANGLE_QUOTE;
-        //用于拼接A的右部
-        StringBuilder r1 = new StringBuilder();
-        //用于拼接A'的右部
-        StringBuilder r2 = new StringBuilder();
-        for (ArrayList<String> stringArrayList : right) {
-            String s = "";
-            for (String str : stringArrayList) {
-                s += str;
-                s += " ";
-            }
-            if (stringArrayList.indexOf(left) == 0) {
-
-                r2.append(s.substring(s.indexOf(left) + left.length())).append(repl).append("|");
-            } else {
-                r1.append("|").append(s).append(repl);
-            }
-        }
-        //改为右递归后再加入到产生式P中
-        productions.put(left, str2Array(r1.substring(1)));
-        productions.put(repl, str2Array(r2.append(EPSILON).toString()));
-    }
+//    private void directLeftRecursive(String left, @NotNull ArrayList<ArrayList<String>> right) {
+//        //用于替换的非终结符(如A')
+//        String repl = left + SINGLE_ANGLE_QUOTE;
+//        //用于拼接A的右部
+//        StringBuilder r1 = new StringBuilder();
+//        //用于拼接A'的右部
+//        StringBuilder r2 = new StringBuilder();
+//        for (ArrayList<String> stringArrayList : right) {
+//            String s = "";
+//            for (String str : stringArrayList) {
+//                s += str;
+//                s += " ";
+//            }
+//            if (stringArrayList.indexOf(left) == 0) {
+//
+//                r2.append(s.substring(s.indexOf(left) + left.length())).append(repl).append("|");
+//            } else {
+//                r1.append("|").append(s).append(repl);
+//            }
+//        }
+//        //改为右递归后再加入到产生式P中
+//        productions.put(left, str2Array(r1.substring(1)));
+//        productions.put(repl, str2Array(r2.append(EPSILON).toString()));
+//    }
 
     //将产生式根据 | 进行分割
-    private ArrayList<String> str2Array(String str) {
-        List<String> strings = Arrays.asList(str.split("\\|"));
-        ArrayList<String> stringArrayList = new ArrayList<>(strings);
-        return stringArrayList;
-    }
+//    private ArrayList<String> str2Array(String str) {
+//        List<String> strings = Arrays.asList(str.split("\\|"));
+//        ArrayList<String> stringArrayList = new ArrayList<>(strings);
+//        return stringArrayList;
+//    }
 
     //将产生式右部转化为ArrayList<ArrayList<String>>
     private ArrayList<ArrayList<String>> right2Array(ArrayList<String> arrayList) {
@@ -612,6 +667,7 @@ public class Grammar {
 
     public HashMap<String, HashSet<String>> getFOLLOW() {
         return FOLLOW;
+
     }
 
     public boolean isLL1() {
