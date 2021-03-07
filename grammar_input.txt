@@ -1,3 +1,7 @@
-A->a B|B b
-B->A c
-B->d
+E->T E'
+E'->+ E|$
+T->F T'
+T'->T|$
+F->P F'
+F'->* F'|$
+P->( E )|a|b|^
