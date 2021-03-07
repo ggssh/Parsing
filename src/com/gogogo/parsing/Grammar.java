@@ -236,6 +236,25 @@ public class Grammar {
         }
         System.out.println(strArrayMap);
     }
+    //重新实现消除左递归
+    public void eliminateDirectLeftRecursive(String left,ArrayList<ArrayList<String>> right){
+        HashMap<String, ArrayList<ArrayList<String>>> strArrayMap = new HashMap<>();
+        for (int i = 0; i < VN.size(); i++) {
+            //将每个产生式的右部转化为二维ArrayList
+            strArrayMap.put(VN.get(i), right2Array(productions.get(VN.get(i))));
+        }
+        //用于替换的非终结符(如A')
+        String repl = left+SINGLE_ANGLE_QUOTE;
+        for (int i = 0;i<strArrayMap.get(left).size();i++){
+            if (strArrayMap.get(left).get(i).get(0).equals(left)){
+
+                strArrayMap.get(left).get(i).add(repl);
+                strArrayMap.get(left).remove(0);
+            }else {
+                strArrayMap.get(left).get(i).add(repl);
+            }
+        }
+    }
 
     //消除直接左递归
     private void directLeftRecursive(String left, @NotNull ArrayList<ArrayList<String>> right) {
