@@ -4,6 +4,7 @@ import com.gogogo.parsing.Grammar;
 import org.junit.jupiter.api.Test;
 
 import java.io.RandomAccessFile;
+import java.util.Scanner;
 
 /**
  * 功能描述：
@@ -33,7 +34,11 @@ public class test {
         //System.out.println("First "+grammar.getFIRST());
         //System.out.println("Follow "+ grammar.getFOLLOW());
         grammar.grammarOutput();
-        System.out.println(grammar.isLL1());
+        grammar.isLL1();
         grammar.preForm();
+        Scanner scanner = new Scanner(System.in);
+        String str = scanner.nextLine();
+        grammar.printAutoPre(str);
+        scanner.close();
     }
 }

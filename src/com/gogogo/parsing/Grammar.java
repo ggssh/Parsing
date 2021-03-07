@@ -242,6 +242,7 @@ public class Grammar {
             eliminateDirectLeftRecursive(VN.get(i),strArrayMap.get(VN.get(i)));
         }
         VN = new ArrayList<>(productions.keySet());
+        setVT();
     }
 
     //重新实现消除直接左递归
@@ -796,5 +797,63 @@ public class Grammar {
             System.out.println();
         }
         System.out.println();
+    }
+
+    public void printAutoPre(String str){
+        System.out.println(str+"的分析过程");
+        Queue<String> queue = new LinkedList<>();
+        String[]  chars= str.split(" ");
+        for (int i =0;i< chars.length;i++){
+            queue.offer(chars[i]);
+        }
+        queue.offer("#");
+
+//        添加分析栈
+        Stack<String> stack = new Stack<>();
+        stack.push("#");
+        stack.push(START);
+
+        boolean isSuccess = false;
+
+        int step =1;
+        while (!stack.empty()){
+            String left = stack.peek();
+            String right = queue.peek();
+//            分析成功
+            if(left.equals(right)&&right.equals("#")){
+                isSuccess = true;
+                System.out.println((step++) + "\t#\t#\t" + "分析成功");
+                break;
+            }
+//            匹配栈顶和当前的符号，如果都是终结符号，消除
+            if(left.equals(right)){
+                String stackStr = String.join("", stack.toArray(new String[stack.size()]));
+                String queueStr = String.join("", queue.toArray(new String[queue.size()]));
+                System.out.println((step++) + "\t" + stackStr + "\t" + queueStr + "\t匹配成功" + left);
+                stack.pop();
+                queue.poll();
+                continue;
+            }
+//            从预测表查询
+            if(preMap.containsKey(left+" "+right)){
+                String stackStr = String.join("", stack.toArray(new String[stack.size()]));
+                String queueStr = String.join("", queue.toArray(new String[queue.size()]));
+                System.out.println((step++) + "\t" + stackStr + "\t" + queueStr + "\t用" + left + "→"
+                        + preMap.get(left +" "+right) + "," + right + "逆序进栈");
+                stack.pop();
+                String[] tmp = preMap.get(left+" "+right).split(" ");
+                //需要逆序进栈
+                for(int i =tmp.length-1;i>=0;i--){
+                    String t = new String(tmp[i]);
+                    if(!t.equals("$")){
+                        stack.push(t);
+                    }
+                }
+                continue;
+            }
+            break;
+        }
+        if(!isSuccess)
+            System.out.println((step++) + "\t#\t#\t" + "分析失败");
     }
 }
