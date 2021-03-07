@@ -19,23 +19,21 @@ public class test {
         grammar.setVN("grammar_input.txt");
         grammar.setVT();
         System.out.println("开始符号为 : "+ grammar.getVN().get(0));
-//        grammar.eliminateLeftRecursion();
         grammar.eliminateLeftRecursion();
         //消除左递归
-        //grammar.allLeftRecursive();
         //提取左公共因子
-        //grammar.leftFactoring();
+        grammar.leftFactoring();
         //获得First集
-        //grammar.getFirst();
+        grammar.getFirst();
         //获得Follow集
-        //grammar.getFollow();
+        grammar.getFollow();
         //System.out.println(grammar.getProductions());
         System.out.println("VN "+grammar.getVN());
         System.out.println("VT "+grammar.getVT());
         //System.out.println("First "+grammar.getFIRST());
         //System.out.println("Follow "+ grammar.getFOLLOW());
         grammar.grammarOutput();
-        //System.out.println(grammar.isLL1());
-        //grammar.preForm();
+        System.out.println(grammar.isLL1());
+        grammar.preForm();
     }
 }
